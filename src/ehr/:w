@@ -1,0 +1,5 @@
+(ns ehr.actions (:require-macros [ehr.actions :refer [defaction]]))
+(defaction drug-search)
+(defaction drug-select)
+(def drug2 :drug2)
+(println "Made actions")
