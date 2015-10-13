@@ -13,7 +13,6 @@
 (def reducers (atom {}))
 
 (defn register [action key path f]
-  (println "register" key "sarting with" (count (@reducers action)))
   (swap! reducers update-in [action]
          (fn [rlist] (->> rlist
                          (filter #(not= key (:key (meta %))))
@@ -34,7 +33,6 @@
   (binding [*dispatching* true]
     (let [reducer-coll (@reducers tag)
           initial-state @app-state
-          _ (println "Doing " (count reducer-coll) " reducers for " tag initial-state)
           next-state
           (reduce 
            (fn [state [next-fn path]]
@@ -44,15 +42,16 @@
            initial-state
            reducer-coll)]
       (reset! app-state next-state)
-      (println "Which yielded " @app-state)
-      next-state)) 
-  #_(when-not (= tag actions/state-to-url)
-    (dispatch-simple actions/state-to-url)))
+      (println "New state" next-state)
+      next-state)))
 
 (defn dispatch [tag & args]
-  (if (fn? tag)
-    (apply tag args)
-    (apply dispatch-simple tag args)))
+  (let [response
+        (if (fn? tag)
+          (apply tag @app-state args)
+          (apply dispatch-simple tag args))]
+    (dispatch-simple actions/state-to-url)
+    response))
 
 (add-watch
  app-state :populate-url-params

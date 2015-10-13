@@ -9,5 +9,8 @@
 (defaction drug-previous-step)
 (defaction drug-pick)
 (defaction drug-cursor-move)
+
+(defaction hook-put)
+
 (defaction state-to-url)
 (defaction url-to-state)
