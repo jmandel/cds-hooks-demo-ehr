@@ -24,7 +24,7 @@
 (defn editable->clj [e]
   (-> e
       (str/replace #"\s+" " ")
-      (js/JSON.parse)
+      js/JSON.parse
       js->clj))
 
 (defn normalize-json [e]
@@ -41,43 +41,35 @@
 (defn delete-hook [id]
   (dispatch actions/hook-put id nil))
 
-(defn hook-editor [{:keys [hook] :as props}]
-  (println "Hooke edit ooutr called ")
+
+(defn hook-editor [props hook]
   (let [original (atom (clj->editable hook))
         id (hook "id")
         current (reagent/atom @original)]
     (reagent/create-class
      {
       :component-will-receive-props
-      (fn [this props]
-        (let [{:keys [ hook] :as props} (reagent.impl.util/extract-props props)]
-          (reset! original (clj->editable hook))
-          (reset! current @original)))
+      (fn [this [_ props hook]]
+        (reset! original (clj->editable hook))
+        (reset! current @original))
 
       :reagent-render
-      (fn [{:keys [hook] :as props}]
-        (println "Hooke edit inner called " hook)
-        [:div {:key id}
-         [:button {
-                   :onClick #(delete-hook id)}
-          "delete"]
-         [:button {
-                   :disabled (or (nil? @current) (= @current @original))
-                   :onClick #(save-hook id @current)}
-          "save"]
+      (fn [props hook]
+        [:div {}
+         [:button {:onClick #(delete-hook id)} "delete"]
+         [:button {:disabled (or (nil? @current) (= @current @original))
+                   :onClick #(save-hook id @current)} "save"]
+         (when-not @current " invalid")
          [:div {:contentEditable true
-                :onInput #(reset! current ( normalize-json (-> %
-                                                               .-target
-                                                               .-textContent)))
+                :onInput #(reset! current ( normalize-json (.. % -target -textContent)))
                 :dangerouslySetInnerHTML
-                {:__html (span-formatted  @original)}}]])})))
+                {:__html (span-formatted @original)}}]])})))
 
 (defn hook-manager [hook-store]
   [:div
    (for [hook-id (keys (get-in hook-store [:definitions]))]
-     [hook-editor {:key hook-id :hook   (-> hook-store :definitions (get hook-id))}])])
-
-  (js/console.log "HASH" (js/location.hash.slice 1)) 
+     [hook-editor {:key hook-id}   (-> hook-store :definitions (get hook-id))])])
+   
 (defn home-page []
   (let [state @app-state]
     [:div [:h2 "Demo EHR"]
